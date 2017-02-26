@@ -1,0 +1,12 @@
+<flows>   
+<vType  id="passenger" accel="2.9" decel="7.5" sigma="0.5" length="4.3" minGap="2.5" maxSpeed="23.3333" color="1,1,0" speedFactor="1.0"  speedDev="0.1" />
+<flow id="0" type="passenger" from="edge1" to="edge2"  begin="0" end="250"  number="50" 
+departLane="random" departSpeed="random" departPos="base" 
+/>
+<flow id="1" type="passenger" from="edge1" to="edge3"  begin="0" end="250"  number="50" 
+departLane="random" departSpeed="random" departPos="base" 
+/>
+<flow id="2" type="passenger" from="edge1" to="edge4"  begin="0" end="250"  number="50" 
+departLane="random" departSpeed="random" departPos="base" 
+/>
+</flows>
