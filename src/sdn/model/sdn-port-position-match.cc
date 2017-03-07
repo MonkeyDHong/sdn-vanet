@@ -27,6 +27,19 @@ namespace sdn{
 
 Port_Position_Match::Port_Position_Match ()
 {
+	m_port1 = 65419;
+	m_port2 = 65420;
+	m_port3 = 65421;
+	m_port4 = 65422;
+	m_port5 = 65423;
+	m_port6 = 65424;
+	m_port7 = 65425;
+	m_port8 = 65426;
+	m_port9 = 65427;
+	m_port10 = 65428;
+	m_port11 = 65429;
+	m_port12 = 65430;
+
 	m_controlAreaMap.clear();
 	ControlAreaList templist;
 	ControlArea temp;

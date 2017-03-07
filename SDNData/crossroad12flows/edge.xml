@@ -1,0 +1,70 @@
+<edges>   
+<edge id="edgeR-0-0" from="node1" to="node2" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeR-0-1" from="node2" to="node3" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeL-0-0" from="node2" to="node1" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeL-0-1" from="node3" to="node2" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeU-0-0" from="node1" to="node4" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeD-0-0" from="node4" to="node1" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeU-0-1" from="node2" to="node5" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeD-0-1" from="node5" to="node2" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeU-0-2" from="node3" to="node6" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeD-0-2" from="node6" to="node3" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeR-1-0" from="node4" to="node5" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeR-1-1" from="node5" to="node6" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeL-1-0" from="node5" to="node4" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeL-1-1" from="node6" to="node5" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeU-1-0" from="node4" to="node7" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeD-1-0" from="node7" to="node4" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeU-1-1" from="node5" to="node8" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeD-1-1" from="node8" to="node5" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeU-1-2" from="node6" to="node9" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeD-1-2" from="node9" to="node6" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeR-2-0" from="node7" to="node8" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeR-2-1" from="node8" to="node9" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeL-2-0" from="node8" to="node7" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeL-2-1" from="node9" to="node8" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeU-2-0" from="node7" to="node10" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeD-2-0" from="node10" to="node7" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeU-2-1" from="node8" to="node11" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeD-2-1" from="node11" to="node8" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeU-2-2" from="node9" to="node12" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeD-2-2" from="node12" to="node9" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeR-3-0" from="node10" to="node11" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeR-3-1" from="node11" to="node12" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeL-3-0" from="node11" to="node10" priority="75"   
+numLanes="2" speed="15" />   
+<edge id="edgeL-3-1" from="node12" to="node11" priority="75"   
+numLanes="2" speed="15" />   
+</edges>  

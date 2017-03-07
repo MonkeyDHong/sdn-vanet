@@ -1,0 +1,26 @@
+<flows>   
+<flow id="flow0" from="edge-1-5" to="edge-5-2" begin="0" end="2000"   
+number="100" />   
+<flow id="flow1" from="edge-1-5" to="edge-5-3" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow2" from="edge-1-5" to="edge-5-4" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow3" from="edge-2-5" to="edge-5-1" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow4" from="edge-2-5" to="edge-5-4" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow5" from="edge-2-5" to="edge-5-3" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow6" from="edge-3-5" to="edge-5-2" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow7" from="edge-3-5" to="edge-5-1" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow8" from="edge-3-5" to="edge-5-4" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow9" from="edge-4-5" to="edge-5-1" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow10" from="edge-4-5" to="edge-5-2" begin="0" end="2000"   
+number="100" /> 
+<flow id="flow11" from="edge-4-5" to="edge-5-3" begin="0" end="2000"   
+number="100" /> 
+</flows>

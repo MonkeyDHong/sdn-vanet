@@ -1,0 +1,14 @@
+<nodes>   
+<node id="node1" x="100.0" y="100.0" type="right_before_left"/>   
+<node id="node2" x="400.0" y="100.0" type="right_before_left"/>   
+<node id="node3" x="700.0" y="100.0" type="right_before_left"/>   
+<node id="node4" x="100.0" y="300.0" type="right_before_left"/>   
+<node id="node5" x="400.0" y="300.0" type="right_before_left"/>   
+<node id="node6" x="700.0" y="300.0" type="right_before_left"/>   
+<node id="node7" x="100.0" y="600.0" type="right_before_left"/>   
+<node id="node8" x="400.0" y="600.0" type="right_before_left"/>   
+<node id="node9" x="700.0" y="600.0" type="right_before_left"/>   
+<node id="node10" x="100.0" y="800.0" type="right_before_left"/>   
+<node id="node11" x="400.0" y="800.0" type="right_before_left"/>   
+<node id="node12" x="700.0" y="800.0" type="right_before_left"/>   
+</nodes>

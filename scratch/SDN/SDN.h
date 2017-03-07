@@ -37,6 +37,20 @@
 
 using namespace ns3;
 
+class transmissionStatistics
+{
+public:
+	uint32_t Rx_Data_Bytes, Tx_Data_Bytes;
+	uint32_t Rx_Data_Pkts, Tx_Data_Pkts;
+	uint32_t old_Tx_Data_Pkts,old_Rx_Data_Pkts;
+	uint32_t Unique_RX_Pkts, old_Unique_RX_Pkts;
+
+	std::unordered_set<uint64_t> dup_det;
+	std::unordered_map<uint64_t, Time> delay;
+	std::vector<int64_t> delay_vector;
+	std::vector<int64_t> per_sec_delay_vector;
+};
+
 class VanetSim
 {
 public:
@@ -81,76 +95,22 @@ private:
 	bool verbose;
 	int mod;	//1=SDN Other=OLSR
 	uint32_t nodeNum;
+	int numofLC, numofSource, numofSink;
 	double duration;
 	YansWifiPhyHelper m_SCHPhy, m_CCHPhy;
 	NodeContainer m_nodes;	//Cars + Controller + Source + Sink
 	NetDeviceContainer m_SCHDevices, m_CCHDevices;
 	Ipv4InterfaceContainer m_SCHInterfaces, m_CCHInterfaces;
 	//////////TongJi////////////
-	uint32_t Rx_Routing_Bytes, Tx_Routing_Bytes;
-	uint32_t RX_Routing_Pkts, TX_Routing_Pkts;
-	uint32_t Rx_Data_Bytes, Tx_Data_Bytes, Tx_Data_Bytes1, Tx_Data_Bytes2;
-	uint32_t Rx_Data_Pkts, Tx_Data_Pkts, Tx_Data_Pkts1, Tx_Data_Pkts2,
-			old_Tx_Data_Pkts, old_Tx_Data_Pkts1, old_Tx_Data_Pkts2;
-	uint32_t old_Rx_Data_Pkts;
-	uint32_t Unique_RX_Pkts, old_Unique_RX_Pkts;
-
-	uint32_t Rx_Data_Pkts2;
-	uint32_t old_Rx_Data_Pkts2;
-	uint32_t Unique_RX_Pkts2, old_Unique_RX_Pkts2;
-
-	uint32_t Rx_Data_Pkts3;
-	uint32_t old_Rx_Data_Pkts3;
-	uint32_t Unique_RX_Pkts3, old_Unique_RX_Pkts3;
-
-	uint32_t Rx_Data_Pkts4;
-	uint32_t old_Rx_Data_Pkts4;
-	uint32_t Unique_RX_Pkts4, old_Unique_RX_Pkts4;
-
-	uint32_t Rx_Data_Pkts5;
-	uint32_t old_Rx_Data_Pkts5;
-	uint32_t Unique_RX_Pkts5, old_Unique_RX_Pkts5;
-
-	uint32_t Rx_Data_Pkts6;
-	uint32_t old_Rx_Data_Pkts6;
-	uint32_t Unique_RX_Pkts6, old_Unique_RX_Pkts6;
-
-	uint32_t m_port1;
-	uint32_t m_port2;
-	uint32_t m_port3;
-	ApplicationContainer m_source1, m_source2, m_source3, m_sink1, m_sink2,
-			m_sink3, m_cars, m_controller;
+	ApplicationContainer m_source;
 	Ptr<ns3::vanetmobility::VANETmobility> VMo;
-	void ReceiveDataPacket(Ptr<Socket> socket);
-	void ReceiveDataPacket2(Ptr<Socket> socket);
-	void ReceiveDataPacket3(Ptr<Socket> socket);
-	void ReceiveDataPacket4(Ptr<Socket> socket);
-	void ReceiveDataPacket5(Ptr<Socket> socket);
-	void ReceiveDataPacket6(Ptr<Socket> socket);
+	void ReceiveDataPackets(Ptr<Socket> socket);
 	void SendDataPacket();
-	void TXTrace(Ptr<const Packet> newpacket);
-	void TXTrace1(Ptr<const Packet> newpacket);
-	void TXTrace2(Ptr<const Packet> newpacket);
-	std::unordered_set<uint64_t> dup_det;
-	std::unordered_set<uint64_t> dup_det2;
-	std::unordered_set<uint64_t> dup_det3;
-	std::unordered_set<uint64_t> dup_det4;
-	std::unordered_set<uint64_t> dup_det5;
-	std::unordered_set<uint64_t> dup_det6;
+	void TXTraces(std::string context,Ptr<const Packet> newpacket);
+	std::vector<transmissionStatistics> statistics;
+	std::vector<uint64_t> m_port;
+	uint32_t base_port;
 
-	std::unordered_map<uint64_t, Time> delay, delay1, delay2;
-	std::vector<int64_t> delay_vector;
-	std::vector<int64_t> per_sec_delay_vector;
-	std::vector<int64_t> delay_vector2;
-	std::vector<int64_t> per_sec_delay_vector2;
-	std::vector<int64_t> delay_vector3;
-	std::vector<int64_t> per_sec_delay_vector3;
-	std::vector<int64_t> delay_vector4;
-	std::vector<int64_t> per_sec_delay_vector4;
-	std::vector<int64_t> delay_vector5;
-	std::vector<int64_t> per_sec_delay_vector5;
-	std::vector<int64_t> delay_vector6;
-	std::vector<int64_t> per_sec_delay_vector6;
 	std::string m_todo;
 	std::string m_ds;	//DataSet
 

@@ -39,10 +39,8 @@ VanetSim::VanetSim()
 	//numPackets = 1;
 	//interval = 0.1; // seconds
 	verbose = false;//turn on all WifiNetDevice log components
-	//source communication port
-	m_port1 = 65419;
-	m_port2 = 65420;
-	m_port3 = 65421;
+
+
 	//input
 	//traceFile = "";// use for ns 2
 	homepath = ".";//getenv("HOME");
@@ -50,46 +48,28 @@ VanetSim::VanetSim()
 	duration = -1;
 	mod = 1;
 	nodeNum = 0;
+	numofLC = 4;
+	numofSource = 3;
+	numofSink = 3;
 
+	//source communication port
 	//statistic
-	Rx_Data_Bytes = 0;
-	Rx_Data_Pkts = 0;
-	Rx_Data_Pkts2 = 0;
-	Rx_Data_Pkts3 = 0;
-	Rx_Data_Pkts4 = 0;
-	Rx_Data_Pkts5 = 0;
-	Rx_Data_Pkts6 = 0;
-	Rx_Routing_Bytes = 0;
-	RX_Routing_Pkts = 0;
-	Tx_Data_Bytes = 0;
-	Tx_Data_Pkts = 0;
-	Tx_Data_Bytes1 = 0;
-	Tx_Data_Pkts1 = 0;
-	Tx_Data_Bytes2 = 0;
-	Tx_Data_Pkts2 = 0;
-	Tx_Routing_Bytes = 0;
-	TX_Routing_Pkts = 0;
-	Unique_RX_Pkts = 0;
-	Unique_RX_Pkts2 = 0;
-	Unique_RX_Pkts3 = 0;
-	Unique_RX_Pkts4 = 0;
-	Unique_RX_Pkts5 = 0;
-	Unique_RX_Pkts6 = 0;
-	old_Rx_Data_Pkts = 0;
-	old_Unique_RX_Pkts = 0;
-    old_Rx_Data_Pkts2 = 0;
-    old_Unique_RX_Pkts2 = 0;
-    old_Rx_Data_Pkts3 = 0;
-    old_Unique_RX_Pkts3 = 0;
-	old_Rx_Data_Pkts4 = 0;
-	old_Unique_RX_Pkts4 = 0;
-    old_Rx_Data_Pkts5 = 0;
-    old_Unique_RX_Pkts5 = 0;
-    old_Rx_Data_Pkts6 = 0;
-    old_Unique_RX_Pkts6 = 0;
-	old_Tx_Data_Pkts = 0;
-	old_Tx_Data_Pkts1 = 0;
-	old_Tx_Data_Pkts2 = 0;
+	base_port=65419;
+	for(int i=0;i<numofSource;i++)
+	{
+		m_port.push_back(base_port+i);
+		transmissionStatistics  temp;
+		temp.Rx_Data_Bytes=0;
+		temp.Rx_Data_Pkts=0;
+		temp.Tx_Data_Bytes=0;
+		temp.Tx_Data_Pkts=0;
+		temp.Unique_RX_Pkts=0;
+		temp.old_Rx_Data_Pkts=0;
+		temp.old_Tx_Data_Pkts=0;
+		temp.old_Unique_RX_Pkts=0;
+
+		statistics.push_back(temp);
+	}
 	m_numofhm = 0;
 	m_numofapp = 0;
 	m_numofackhello = 0;
@@ -209,7 +189,7 @@ void VanetSim::LoadTraffic()
 
 void VanetSim::ConfigNode()
 {
-	m_nodes.Create(nodeNum+13);//Cars + LC1+LC2+LC3+LC4+Source1+Source2+Source3+Sink1+Sink2+Sink3+Sink4+Sink5+Sink6
+	m_nodes.Create(nodeNum+32);//Cars + LC1-8+Source1-12+Sink1-12
 	/*Only Apps Are Different Between Different kind of Nodes*/
 	// Name nodes
 	for (uint32_t i = 0; i < nodeNum; ++i)
@@ -218,19 +198,25 @@ void VanetSim::ConfigNode()
 		 os << "vehicle-" << i;
 		Names::Add(os.str(), m_nodes.Get(i));
 	}
-	Names::Add("LC1",m_nodes.Get(nodeNum));
-	Names::Add("LC2",m_nodes.Get(nodeNum+1));
-	Names::Add("LC3",m_nodes.Get(nodeNum+2));
-	Names::Add("LC4",m_nodes.Get(nodeNum+3));
-	Names::Add("Source1",m_nodes.Get(nodeNum+4));
-	Names::Add("Source2",m_nodes.Get(nodeNum+5));
-	Names::Add("Source3",m_nodes.Get(nodeNum+6));
-	Names::Add("Sink1",m_nodes.Get(nodeNum+7));
-	Names::Add("Sink2",m_nodes.Get(nodeNum+8));
-	Names::Add("Sink3",m_nodes.Get(nodeNum+9));
-    Names::Add("Sink4",m_nodes.Get(nodeNum+10));
-	Names::Add("Sink5",m_nodes.Get(nodeNum+11));
-	Names::Add("Sink6",m_nodes.Get(nodeNum+12));
+	for (uint32_t i = 1; i <= numofLC; ++i)
+	{
+		std::ostringstream os;
+		os << "LC" << i;
+		Names::Add(os.str(), m_nodes.Get(nodeNum - 1 + i));
+	}
+	for (uint32_t i = 1; i <= numofSource; ++i)
+	{
+		std::ostringstream os;
+		os << "Source" << i;
+		Names::Add(os.str(), m_nodes.Get(nodeNum - 1 + numofLC + i));
+	}
+	for (uint32_t i = 1; i <= numofSink; ++i)
+	{
+		std::ostringstream os;
+		os << "Sink" << i;
+		Names::Add(os.str(),
+				m_nodes.Get(nodeNum - 1 + numofLC + numofSource + i));
+	}
 }
 
 void VanetSim::ConfigChannels()
@@ -311,32 +297,32 @@ void VanetSim::ConfigMobility()
 	 std::cout<<"Now?"<<temp_now.GetSeconds ()<<std::endl;
 
 	//add fixed node
-	Ptr<MobilityModel> Temp = m_nodes.Get(nodeNum)->GetObject<MobilityModel>();//LC1
+	Ptr<MobilityModel> Temp = m_nodes.Get(nodeNum)->GetObject<MobilityModel>();	//LC1
 	Temp->SetPosition(Vector(500.0, 1000.0, 0.0));
-	Temp = m_nodes.Get(nodeNum+1)->GetObject<MobilityModel>();//LC2
+	Temp = m_nodes.Get(nodeNum + 1)->GetObject<MobilityModel>();	//LC2
 	Temp->SetPosition(Vector(1000.0, 500.0, 0.0));
-	Temp = m_nodes.Get(nodeNum+2)->GetObject<MobilityModel>();//LC3
+	Temp = m_nodes.Get(nodeNum + 2)->GetObject<MobilityModel>();	//LC3
 	Temp->SetPosition(Vector(1500.0, 1000.0, 0.0));
-	Temp = m_nodes.Get(nodeNum+3)->GetObject<MobilityModel>();//LC4
+	Temp = m_nodes.Get(nodeNum + 3)->GetObject<MobilityModel>();	//LC4
 	Temp->SetPosition(Vector(1000.0, 1500.0, 0.0));
-    Temp = m_nodes.Get(nodeNum+4)->GetObject<MobilityModel>();//Source1
-    Temp->SetPosition(Vector(-150.0, 998.0, 0.0));
-    Temp = m_nodes.Get(nodeNum+5)->GetObject<MobilityModel>();//Source2
-    Temp->SetPosition(Vector(-150.0, 999.0, 0.0));
-    Temp = m_nodes.Get(nodeNum+6)->GetObject<MobilityModel>();//Source3
-    Temp->SetPosition(Vector(-150.0, 1000.0, 0.0));
-    Temp = m_nodes.Get(nodeNum+7)->GetObject<MobilityModel>();//Sink1
-    Temp->SetPosition(Vector(1000.0, 1000.0, 0.0));
-    Temp = m_nodes.Get(nodeNum+8)->GetObject<MobilityModel>();//Sink2
-    Temp->SetPosition(Vector(1001.0, 1000.0, 0.0));
-    Temp = m_nodes.Get(nodeNum+9)->GetObject<MobilityModel>();//Sink3
-    Temp->SetPosition(Vector(1002.0, 1000.0, 0.0));
-    Temp = m_nodes.Get(nodeNum+10)->GetObject<MobilityModel>();//Sink4
-    Temp->SetPosition(Vector(1000.0, 0.0, 0.0));
-    Temp = m_nodes.Get(nodeNum+11)->GetObject<MobilityModel>();//Sink5
-    Temp->SetPosition(Vector(2000.0, 1000.0, 0.0));
-    Temp = m_nodes.Get(nodeNum+12)->GetObject<MobilityModel>();//Sink6
-    Temp->SetPosition(Vector(1000.0, 2000.0, 0.0));
+	Temp = m_nodes.Get(nodeNum + 4)->GetObject<MobilityModel>();	//Source1
+	Temp->SetPosition(Vector(-150.0, 998.0, 0.0));
+	Temp = m_nodes.Get(nodeNum + 5)->GetObject<MobilityModel>();	//Source2
+	Temp->SetPosition(Vector(-150.0, 999.0, 0.0));
+	Temp = m_nodes.Get(nodeNum + 6)->GetObject<MobilityModel>();	//Source3
+	Temp->SetPosition(Vector(-150.0, 1000.0, 0.0));
+	Temp = m_nodes.Get(nodeNum + 7)->GetObject<MobilityModel>();	//Sink1
+	Temp->SetPosition(Vector(1000.0, 1000.0, 0.0));
+	Temp = m_nodes.Get(nodeNum + 8)->GetObject<MobilityModel>();	//Sink2
+	Temp->SetPosition(Vector(1001.0, 1000.0, 0.0));
+	Temp = m_nodes.Get(nodeNum + 9)->GetObject<MobilityModel>();	//Sink3
+	Temp->SetPosition(Vector(1002.0, 1000.0, 0.0));
+/*	Temp = m_nodes.Get(nodeNum + 10)->GetObject<MobilityModel>();	//Sink4
+	Temp->SetPosition(Vector(1000.0, 0.0, 0.0));
+	Temp = m_nodes.Get(nodeNum + 11)->GetObject<MobilityModel>();	//Sink5
+	Temp->SetPosition(Vector(2000.0, 1000.0, 0.0));
+	Temp = m_nodes.Get(nodeNum + 12)->GetObject<MobilityModel>();	//Sink6
+	Temp->SetPosition(Vector(1000.0, 2000.0, 0.0));*/
 }
 
 void VanetSim::ConfigApp()
@@ -380,19 +366,19 @@ void VanetSim::ConfigApp()
         {
             sdn.SetNodeTypeMap (m_nodes.Get (i), sdn::CAR);
         }
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum), sdn::LOCAL_CONTROLLER);//LC1
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+1), sdn::LOCAL_CONTROLLER);//LC2
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+2), sdn::LOCAL_CONTROLLER);//LC3
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+3), sdn::LOCAL_CONTROLLER);//LC4
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+4), sdn::OTHERS);//Source1
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+5), sdn::OTHERS);//Source2
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+6), sdn::OTHERS);//Source3
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+7), sdn::OTHERS);//Sink1
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+8), sdn::OTHERS);//Sink2
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+9), sdn::OTHERS);//Sink3
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+10), sdn::OTHERS);//Sink4
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+11), sdn::OTHERS);//Sink5
-        sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+12), sdn::OTHERS);//Sink6
+
+        for (uint32_t i = 0; i<numofLC; ++i)
+        {
+            sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+i), sdn::LOCAL_CONTROLLER);
+        }
+        for (uint32_t i = 0; i<numofSource; ++i)
+        {
+            sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+numofLC+i), sdn::OTHERS);
+        }
+        for (uint32_t i = 0; i<numofSink; ++i)
+        {
+            sdn.SetNodeTypeMap (m_nodes.Get (nodeNum+numofLC+numofSource+i), sdn::OTHERS);
+        }
 
         sdn.SetSR (range1);
         internet.SetRoutingHelper(sdn);
@@ -461,269 +447,82 @@ void VanetSim::ConfigApp()
 	if ((mod == 1)||(mod==5))
 	  {
 		//brocast in different port
-	    std::pair<Ptr<Ipv4>, uint32_t> RetValue = m_SCHInterfaces.Get (nodeNum+4);
-	    Ipv4InterfaceAddress theinterface = RetValue.first->GetAddress (RetValue.second, 0);
-	    Ipv4Address bcast = theinterface.GetLocal ().GetSubnetDirectedBroadcast (theinterface.GetMask ());
-	    remote1 = InetSocketAddress(bcast, m_port1);
 
-	    std::pair<Ptr<Ipv4>, uint32_t> RetValue1 = m_SCHInterfaces.Get (nodeNum+5);
-	    Ipv4InterfaceAddress theinterface1 = RetValue1.first->GetAddress (RetValue1.second, 0);
-	    Ipv4Address bcast1 = theinterface1.GetLocal ().GetSubnetDirectedBroadcast (theinterface1.GetMask ());
-	    remote2 = InetSocketAddress(bcast1, m_port2);
+	    for(int i=0;i<numofSource;i++)
+	    {
+	    	Address remote;
+		    std::pair<Ptr<Ipv4>, uint32_t> RetValue = m_SCHInterfaces.Get (nodeNum+numofLC+i);
+		    Ipv4InterfaceAddress theinterface = RetValue.first->GetAddress (RetValue.second, 0);
+		    Ipv4Address bcast = theinterface.GetLocal ().GetSubnetDirectedBroadcast (theinterface.GetMask ());
+		    remote = InetSocketAddress(bcast, m_port[i]);
+			OnOffHelper Source("ns3::UdpSocketFactory",remote);//SendToSink--Brocast
 
-	    std::pair<Ptr<Ipv4>, uint32_t> RetValue2 = m_SCHInterfaces.Get (nodeNum+6);
-	     Ipv4InterfaceAddress theinterface2 = RetValue2.first->GetAddress (RetValue2.second, 0);
-	    Ipv4Address bcast2 = theinterface2.GetLocal ().GetSubnetDirectedBroadcast (theinterface2.GetMask ());
-	    remote3= InetSocketAddress(bcast2, m_port3);
+			Source.SetConstantRate(DataRate("10kbps"));
+			//set data rate
+
+			//set ontime:duration of ontime will send data
+			Source.SetAttribute("OnTime",StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
+
+			//set offtime:duration of offtime willnot send data
+			//Source.SetAttribute("OffTime",StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
+
+			//set packet size
+			Source.SetAttribute("PacketSize", UintegerValue (packetSize));
+			//install on node and set start time and stop time
+			m_source = Source.Install(m_nodes.Get(nodeNum+numofLC+i));//Insatll on Source1
+			m_source.Start(Seconds(140.0+i*0.01));
+			m_source.Stop(Seconds(250.0+i*0.01));//Default Start time is 0.
+
+		    //statistics:trace function recall
+			std::string temp1 = "/NodeList/"+std::to_string (nodeNum+numofLC+i)+"/ApplicationList/0/$ns3::OnOffApplication/Tx";
+			Config::Connect (temp1,MakeCallback(&VanetSim::TXTraces, this));//todo 这有什么作用?回调函数txtrace
+
+			//sink
+			TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
+			Ptr<Socket> sink = Socket::CreateSocket (m_nodes.Get(nodeNum+numofLC+numofSource+i), tid);//The Sink1
+			//HearALL;
+			InetSocketAddress local = InetSocketAddress(Ipv4Address::GetZero (),m_port[i]);
+			sink->Bind(local);
+			sink->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPackets, this));
+			//sink->SetAttribute("num", StringValue(i));
+	    }
+
 	  }
 	else
 	  {
 		//directly send to destination in different port
-	    remote1 = InetSocketAddress(m_SCHInterfaces.GetAddress (nodeNum+10), m_port1);
-	    remote2 = InetSocketAddress(m_SCHInterfaces.GetAddress (nodeNum+11), m_port2);
-	    remote3 = InetSocketAddress(m_SCHInterfaces.GetAddress (nodeNum+12), m_port3);
+//	    remote1 = InetSocketAddress(m_SCHInterfaces.GetAddress (nodeNum+numofLC+numofSource), m_port1);
+//	    remote2 = InetSocketAddress(m_SCHInterfaces.GetAddress (nodeNum+numofLC+numofSource+1), m_port2);
+//	    remote3 = InetSocketAddress(m_SCHInterfaces.GetAddress (nodeNum+numofLC+numofSource+2), m_port3);
 	  }
-
-	//
-	OnOffHelper Source1("ns3::UdpSocketFactory",remote1);//SendToSink1
-	OnOffHelper Source2("ns3::UdpSocketFactory",remote2);//SendToSink2
-	OnOffHelper Source3("ns3::UdpSocketFactory",remote3);//SendToSink3
-
-	//set data rate
-	Source1.SetConstantRate(DataRate("10kbps"));
-
-	//set ontime:duration of ontime will send data
-	Source1.SetAttribute("OnTime",StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
-	Source2.SetAttribute("OnTime",StringValue ("ns3::ConstantRandomVariable[Constant=0.1]"));
-	Source3.SetAttribute("OnTime",StringValue ("ns3::ConstantRandomVariable[Constant=0.1]"));
-
-	//set offtime:duration of offtime willnot send data
-	//Source.SetAttribute("OffTime",StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
-
-	//set packet size
-	Source1.SetAttribute("PacketSize", UintegerValue (packetSize));
-	Source2.SetAttribute("PacketSize", UintegerValue (packetSize));
-	Source3.SetAttribute("PacketSize", UintegerValue (packetSize));
-
-	//install on node and set start time and stop time
-	m_source1 = Source1.Install(m_nodes.Get(nodeNum+4));//Insatll on Source1
-	m_source1.Start(Seconds(140.0));
-	m_source1.Stop(Seconds(250.0));//Default Start time is 0.
-	m_source2 = Source2.Install(m_nodes.Get(nodeNum+5));//Insatll on Source2
-	//m_source2.Start(Seconds(140.1));//！!！!！to avod consgustion conflict
-	//m_source2.Stop(Seconds(250.1));//Default Start time is 0.
-	m_source2.Stop(Seconds(0.001));//Default Start time is 0.
-    m_source3 = Source3.Install(m_nodes.Get(nodeNum+6));//Insatll on Source3
-    //m_source3.Start(Seconds(140.2));
-    //m_source3.Stop(Seconds(250.2));//Default Start time is 0.
-    m_source3.Stop(Seconds(0.001));//Default Start time is 0.
-
-    //statistics:trace function recall
-	std::string temp1 = "/NodeList/"+std::to_string (nodeNum+4)+"/ApplicationList/0/$ns3::OnOffApplication/Tx";
-	Config::ConnectWithoutContext ( temp1,MakeCallback(&VanetSim::TXTrace, this));//todo 这有什么作用?回调函数txtrace
-	std::string temp2 = "/NodeList/"+std::to_string (nodeNum+5)+"/ApplicationList/0/$ns3::OnOffApplication/Tx";
-	Config::ConnectWithoutContext ( temp2,MakeCallback(&VanetSim::TXTrace1, this));
-	std::string temp3 = "/NodeList/"+std::to_string (nodeNum+6)+"/ApplicationList/0/$ns3::OnOffApplication/Tx";
-	Config::ConnectWithoutContext (temp3,MakeCallback(&VanetSim::TXTrace2, this));
-
-	/*old code
-	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
-	source = Socket::CreateSocket (m_nodes.Get(nodeNum+1), tid);
-	Simulator::Schedule(Seconds(0.0), &VanetSim::SendDataPacket, this);
-
-	*/
-	//sink1
-	TypeId tid = TypeId::LookupByName ("ns3::UdpSocketFactory");
-	Ptr<Socket> sink = Socket::CreateSocket (m_nodes.Get(nodeNum+7), tid);//The Sink1
-	//HearALL;
-	InetSocketAddress local = InetSocketAddress(Ipv4Address::GetZero (),m_port1);
-	sink->Bind(local);
-	sink->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPacket, this));
-
-	//sink2
-	TypeId tid2 = TypeId::LookupByName ("ns3::UdpSocketFactory");
-	Ptr<Socket> sink2 = Socket::CreateSocket (m_nodes.Get(nodeNum+8), tid2);//The Sink2
-	//HearALL;
-	InetSocketAddress local2 = InetSocketAddress(Ipv4Address::GetZero (),m_port2);
-	sink2->Bind(local2);
-	sink2->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPacket2, this));
-
-	//sink3
-	TypeId tid3 = TypeId::LookupByName ("ns3::UdpSocketFactory");
-	Ptr<Socket> sink3 = Socket::CreateSocket (m_nodes.Get(nodeNum+9), tid3);//The Sink3
-	//HearALL;
-	InetSocketAddress local3 = InetSocketAddress(Ipv4Address::GetZero (),m_port3);
-	sink3->Bind(local3);
-	sink3->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPacket3, this));
-
-	//sink4
-	TypeId tid4 = TypeId::LookupByName ("ns3::UdpSocketFactory");
-	Ptr<Socket> sink4 = Socket::CreateSocket (m_nodes.Get(nodeNum+10), tid4);//The Sink4
-	//HearALL;
-	InetSocketAddress local4 = InetSocketAddress(Ipv4Address::GetZero (),m_port1);
-	sink4->Bind(local4);
-	sink4->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPacket4, this));
-
-	//sink5
-	TypeId tid5 = TypeId::LookupByName ("ns3::UdpSocketFactory");
-	Ptr<Socket> sink5 = Socket::CreateSocket (m_nodes.Get(nodeNum+11), tid5);//The Sink5
-	//HearALL;
-	InetSocketAddress local5 = InetSocketAddress(Ipv4Address::GetZero (),m_port2);
-	sink5->Bind(local5);
-	sink5->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPacket5, this));
-
-	//sink6
-	TypeId tid6 = TypeId::LookupByName ("ns3::UdpSocketFactory");
-	Ptr<Socket> sink6 = Socket::CreateSocket (m_nodes.Get(nodeNum+12), tid6);//The Sink6
-	//HearALL;
-	InetSocketAddress local6 = InetSocketAddress(Ipv4Address::GetZero (),m_port3);
-	sink6->Bind(local6);
-	sink6->SetRecvCallback(MakeCallback(&VanetSim::ReceiveDataPacket6, this));
-
-	//enable packet capture library in SCH
-	m_SCHPhy.EnablePcap ("pcapSCH/sdn-vanet", m_SCHDevices);
-	m_CCHPhy.EnablePcap ("pcapCCH/sdn-vanet", m_CCHDevices);
-	AthstatsHelper athstats;
-	athstats.EnableAthstats ("athstatsCCH/sdn-vanet", m_CCHDevices);
 }
 
-void VanetSim::ReceiveDataPacket(Ptr<Socket> socket)
+void VanetSim::ReceiveDataPackets(Ptr<Socket> socket)
 {
 	Ptr<Packet> packet;
 	while ((packet = socket->Recv()))
 	{
 		uint64_t uid = packet->GetUid();
-		if (dup_det.find(uid) == dup_det.end())
+		//no udheader
+		Address to;
+		socket->GetSockName(to);
+		InetSocketAddress address = InetSocketAddress::ConvertFrom (to);
+		int num= address.GetPort() - base_port;
+
+		std::cout<<num<<std::endl;
+		if (statistics[num].dup_det.find(uid) == statistics[num].dup_det.end())
 		{
-			Unique_RX_Pkts++;
-			dup_det.insert(uid);
+			statistics[num].Unique_RX_Pkts++;
+			statistics[num].dup_det.insert(uid);
 
 			Time now = Simulator::Now();
-			int64_t temp = now.GetMicroSeconds() - delay[uid].GetMicroSeconds();
-			delay_vector.push_back(temp);
-			per_sec_delay_vector.push_back(temp);
+			int64_t temp = now.GetMicroSeconds() - statistics[num].delay[uid].GetMicroSeconds();
+			statistics[num].delay_vector.push_back(temp);
+			statistics[num].per_sec_delay_vector.push_back(temp);
 		}
 		//Rx_Data_Bytes += packet->GetSize();
-		Rx_Data_Pkts++;
-		std::cout << "." << std::flush;
-	}
-}
-
-void VanetSim::ReceiveDataPacket2(Ptr<Socket> socket)
-{
-	Ptr<Packet> packet;
-	while ((packet = socket->Recv()))
-	{
-		uint64_t uid = packet->GetUid();
-		if (dup_det2.find(uid) == dup_det2.end())
-		{
-			Unique_RX_Pkts2++;
-			dup_det2.insert(uid);
-
-			Time now = Simulator::Now();
-			int64_t temp = now.GetMicroSeconds()
-					- delay1[uid].GetMicroSeconds();
-			delay_vector2.push_back(temp);
-			per_sec_delay_vector2.push_back(temp);
-		}
-		//Rx_Data_Bytes += packet->GetSize();
-		Rx_Data_Pkts2++;
-		std::cout << ":" << std::flush;
-	}
-}
-
-void VanetSim::ReceiveDataPacket3(Ptr<Socket> socket)
-{
-	Ptr<Packet> packet;
-	while ((packet = socket->Recv()))
-	{
-		uint64_t uid = packet->GetUid();
-		if (dup_det3.find(uid) == dup_det3.end())
-		{
-			Unique_RX_Pkts3++;
-			dup_det3.insert(uid);
-
-			Time now = Simulator::Now();
-			int64_t temp = now.GetMicroSeconds()
-					- delay2[uid].GetMicroSeconds();
-			delay_vector3.push_back(temp);
-			dos << temp << std::endl;
-			per_sec_delay_vector3.push_back(temp);
-		}
-		//Rx_Data_Bytes += packet->GetSize();
-		Rx_Data_Pkts3++;
-		std::cout << "/" << std::flush;
-	}
-}
-
-void VanetSim::ReceiveDataPacket4(Ptr<Socket> socket)
-{
-	Ptr<Packet> packet;
-	while ((packet = socket->Recv()))
-	{
-		uint64_t uid = packet->GetUid();
-		if (dup_det4.find(uid) == dup_det4.end())
-		{
-			Unique_RX_Pkts4++;
-			dup_det4.insert(uid);
-
-			Time now = Simulator::Now();
-			int64_t temp = now.GetMicroSeconds() - delay[uid].GetMicroSeconds();
-			delay_vector4.push_back(temp);
-			dos << temp << std::endl;
-			per_sec_delay_vector4.push_back(temp);
-		}
-		//Rx_Data_Bytes += packet->GetSize();
-		Rx_Data_Pkts4++;
-		std::cout << "+" << std::flush;
-	}
-}
-
-void VanetSim::ReceiveDataPacket5(Ptr<Socket> socket)
-{
-	Ptr<Packet> packet;
-	while ((packet = socket->Recv()))
-	{
-		uint64_t uid = packet->GetUid();
-		if (dup_det5.find(uid) == dup_det5.end())
-		{
-			Unique_RX_Pkts5++;
-			dup_det5.insert(uid);
-
-			Time now = Simulator::Now();
-			int64_t temp = now.GetMicroSeconds()
-					- delay1[uid].GetMicroSeconds();
-			delay_vector5.push_back(temp);
-			dos << temp << std::endl;
-			per_sec_delay_vector5.push_back(temp);
-		}
-		//Rx_Data_Bytes += packet->GetSize();
-		Rx_Data_Pkts5++;
-		std::cout << "@" << std::flush;
-	}
-}
-
-void VanetSim::ReceiveDataPacket6(Ptr<Socket> socket)
-{
-	Ptr<Packet> packet;
-	while ((packet = socket->Recv()))
-	{
-		uint64_t uid = packet->GetUid();
-		if (dup_det6.find(uid) == dup_det6.end())
-		{
-			Unique_RX_Pkts6++;
-			dup_det6.insert(uid);
-
-			Time now = Simulator::Now();
-			int64_t temp = now.GetMicroSeconds()
-					- delay2[uid].GetMicroSeconds();
-			delay_vector6.push_back(temp);
-			dos << temp << std::endl;
-			per_sec_delay_vector6.push_back(temp);
-		}
-		//Rx_Data_Bytes += packet->GetSize();
-		Rx_Data_Pkts6++;
-		std::cout << "#" << std::flush;
+		statistics[num].Rx_Data_Pkts++;
+		std::cout <<num<< "." << std::flush;
 	}
 }
 
@@ -743,78 +542,50 @@ void VanetSim::ConfigTracing()
 
 void VanetSim::ProcessOutputs()
 {
-	std::cout << "Tx_Data_Pkts:   " << Tx_Data_Pkts << std::endl;
-	std::cout << "Rx_Data_Pkts4:   " << Rx_Data_Pkts4 << std::endl;
-	std::cout << "Unique_RX_Pkts4: " << Unique_RX_Pkts4 << std::endl;
-
-	if (Unique_RX_Pkts != 0)
-		std::cout << "Reception Rate4/1: "
-				<< ((double) Unique_RX_Pkts4 / Unique_RX_Pkts) * 100
-				<< std::endl;
-
-	std::cout << "Reception Rate 4/1 total: "
-			<< ((double) Unique_RX_Pkts4 / Tx_Data_Pkts) * 100 << std::endl;
-
-	std::cout << "Tx_Data_Pkts1:   " << Tx_Data_Pkts1 << std::endl;
-	std::cout << "Rx_Data_Pkts5:   " << Rx_Data_Pkts5 << std::endl;
-	std::cout << "Unique_RX_Pkts5: " << Unique_RX_Pkts5 << std::endl;
-
-	if (Unique_RX_Pkts2 != 0)
-		std::cout << "Reception Rate5/2: "
-				<< ((double) Unique_RX_Pkts5 / Unique_RX_Pkts2) * 100
-				<< std::endl;
-
-	std::cout << "Reception Rate 5/2 total: "
-			<< ((double) Unique_RX_Pkts5 / Tx_Data_Pkts1) * 100 << std::endl;
-
-	std::cout << "Tx_Data_Pkts2:   " << Tx_Data_Pkts2 << std::endl;
-	std::cout << "Rx_Data_Pkts6:   " << Rx_Data_Pkts6 << std::endl;
-	std::cout << "Unique_RX_Pkts6: " << Unique_RX_Pkts6 << std::endl;
-
-	if (Unique_RX_Pkts3 != 0)
-		std::cout << "Reception Rate6/3: "
-				<< ((double) Unique_RX_Pkts6 / Unique_RX_Pkts3) * 100
-				<< std::endl;
-
-	std::cout << "Reception Rate 6/3 total: "
-			<< ((double) Unique_RX_Pkts6 / Tx_Data_Pkts2) * 100 << std::endl;
-	os << "Result:" << std::endl;
-	os << "Tx_Data_Pkts:   " << Tx_Data_Pkts << std::endl;
-	os << "Rx_Data_Pkts4:   " << Rx_Data_Pkts4 << std::endl;
-	os << "Unique_RX_Pkts4: " << Unique_RX_Pkts4 << std::endl;
-
-	if (!delay_vector4.empty())
+	for(int i=0;i<numofSource;i++)
 	{
-		int64_t best = delay_vector4[0], worst = delay_vector4[0];
-		double avg = 0;
-		for (std::vector<int64_t>::const_iterator cit = delay_vector4.begin();
-				cit != delay_vector4.end(); ++cit)
+		std::cout << "Source" << i << ":" << std::endl;
+		std::cout << "	Tx_Data_Pkts:   " << statistics[i].Tx_Data_Pkts << std::endl;
+		std::cout << "	Rx_Data_Pkts:   " << statistics[i].Rx_Data_Pkts << std::endl;
+		std::cout << "	Unique_RX_Pkts: " << statistics[i].Unique_RX_Pkts << std::endl;
+
+		if (statistics[i].Tx_Data_Pkts != 0)
+			std::cout << "Reception Rate "<< i << ":"
+					<< ((double) statistics[i].Unique_RX_Pkts / statistics[i].Tx_Data_Pkts ) * 100
+					<< std::endl;
+		if (!statistics[i].delay_vector.empty())
 		{
-			if (*cit < best)
+			int64_t best = statistics[i].delay_vector[0], worst = statistics[i].delay_vector[0];
+			double avg = 0;
+			for (std::vector<int64_t>::const_iterator cit = statistics[i].delay_vector.begin();
+					cit != statistics[i].delay_vector.end(); ++cit)
 			{
-				best = *cit;
+				if (*cit < best)
+				{
+					best = *cit;
+				}
+
+				if (*cit > worst)
+				{
+					worst = *cit;
+				}
+				avg += *cit;
 			}
 
-			if (*cit > worst)
-			{
-				worst = *cit;
-			}
-			avg += *cit;
+			avg /= statistics[i].delay_vector.size();
+			std::cout << "Best delay:   " << best << "us" << std::endl;
+			std::cout << "Worst delay:   " << worst << "us" << std::endl;
+			std::cout << "Avg delay: " << avg << "us" << std::endl;
+			os << "Best delay:   " << best << "us" << std::endl;
+			os << "Worst delay:   " << worst << "us" << std::endl;
+			os << "Avg delay: " << avg << "us" << std::endl;
 		}
-
-		avg /= delay_vector4.size();
-		std::cout << "Best delay:   " << best << "us" << std::endl;
-		std::cout << "Worst delay:   " << worst << "us" << std::endl;
-		std::cout << "Avg delay: " << avg << "us" << std::endl;
-		os << "Best delay:   " << best << "us" << std::endl;
-		os << "Worst delay:   " << worst << "us" << std::endl;
-		os << "Avg delay: " << avg << "us" << std::endl;
-	}
-	else
-	{
-		std::cout << "NO PACKETS WERE RECEIVED." << std::endl;
-		os << "NO PACKETS WERE RECEIVED." << std::endl;
-		dos << "NO PACKETS WERE RECEIVED." << std::endl;
+		else
+		{
+			std::cout << "NO PACKETS WERE RECEIVED." << std::endl;
+			os << "NO PACKETS WERE RECEIVED." << std::endl;
+			dos << "NO PACKETS WERE RECEIVED." << std::endl;
+		}
 	}
 }
 
@@ -864,120 +635,47 @@ void VanetSim::Look_at_clock()
 	std::cout << "Now:" << Simulator::Now().GetSeconds();
 	std::cout << "  Mode: " << m_todo << "  ,DataSet: " << m_ds << std::endl;
 
-	//Source1 txtrace
-	std::cout << "     Source1: " << std::endl;
-	//std::cout<<"Rx_Data_Pkts:   "<<Rx_Data_Pkts<<",   "<<Rx_Data_Pkts - old_Rx_Data_Pkts<<std::endl;
-	std::cout << "Unique_RX_Pkts: " << Unique_RX_Pkts << ",   "
-			<< Unique_RX_Pkts - old_Unique_RX_Pkts << std::endl;
+	for(int i=0;i<numofSource;i++)
+	{
+		std::cout << "Source" << i << ":" << std::endl;
+		std::cout << "	Tx_Data_Pkts:   " << statistics[i].Tx_Data_Pkts << std::endl;
+		std::cout << "	Rx_Data_Pkts:   " << statistics[i].Rx_Data_Pkts << std::endl;
+		std::cout << "	Unique_RX_Pkts: " << statistics[i].Unique_RX_Pkts << std::endl;
 
-	if (Tx_Data_Pkts != 0)
-		std::cout << "Reception Rate 1/S1:: "
-				<< ((double) Unique_RX_Pkts / Tx_Data_Pkts) * 100 << std::endl;
-
-	std::cout << "Rx_Data_Pkts4:   " << Rx_Data_Pkts4 << ",   "
-			<< Rx_Data_Pkts4 - old_Rx_Data_Pkts4 << std::endl;
-	std::cout << "Unique_RX_Pkts4: " << Unique_RX_Pkts4 << ",   "
-			<< Unique_RX_Pkts4 - old_Unique_RX_Pkts4 << std::endl;
-
-	if (Unique_RX_Pkts != 0)
-		std::cout << "Reception Rate 4/1: "
-				<< ((double) Unique_RX_Pkts4 / Unique_RX_Pkts) * 100
-				<< std::endl;
-
-	//Source2 txtrace
-	std::cout << "     Source2: " << std::endl;
-	//std::cout<<"Rx_Data_Pkts:   "<<Rx_Data_Pkts<<",   "<<Rx_Data_Pkts - old_Rx_Data_Pkts<<std::endl;
-	std::cout << "Unique_RX_Pkts2: " << Unique_RX_Pkts2 << ",   "
-			<< Unique_RX_Pkts2 - old_Unique_RX_Pkts2 << std::endl;
-
-	if (Tx_Data_Pkts1 != 0)
-		std::cout << "Reception Rate 2/S2:: "
-				<< ((double) Unique_RX_Pkts2 / Tx_Data_Pkts1) * 100
-				<< std::endl;
-
-	std::cout << "Rx_Data_Pkts5:   " << Rx_Data_Pkts5 << ",   "
-			<< Rx_Data_Pkts5 - old_Rx_Data_Pkts5 << std::endl;
-	std::cout << "Unique_RX_Pkts5: " << Unique_RX_Pkts5 << ",   "
-			<< Unique_RX_Pkts5 - old_Unique_RX_Pkts5 << std::endl;
-
-	if (Unique_RX_Pkts2 != 0)
-		std::cout << "Reception Rate 5/2: "
-				<< ((double) Unique_RX_Pkts5 / Unique_RX_Pkts2) * 100
-				<< std::endl;
-
-	//Source3 txtrace
-	std::cout << "     Source3: " << std::endl;
-	//std::cout<<"Rx_Data_Pkts:   "<<Rx_Data_Pkts<<",   "<<Rx_Data_Pkts - old_Rx_Data_Pkts<<std::endl;
-	std::cout << "Unique_RX_Pkts2: " << Unique_RX_Pkts2 << ",   "
-			<< Unique_RX_Pkts2 - old_Unique_RX_Pkts2 << std::endl;
-
-	if (Tx_Data_Pkts2 != 0)
-		std::cout << "Reception Rate 2/S3:: "
-				<< ((double) Unique_RX_Pkts3 / Tx_Data_Pkts1) * 100
-				<< std::endl;
-
-	std::cout << "Rx_Data_Pkts6:   " << Rx_Data_Pkts6 << ",   "
-			<< Rx_Data_Pkts6 - old_Rx_Data_Pkts6 << std::endl;
-	std::cout << "Unique_RX_Pkts6: " << Unique_RX_Pkts6 << ",   "
-			<< Unique_RX_Pkts6 - old_Unique_RX_Pkts6 << std::endl;
-
-	if (Unique_RX_Pkts3 != 0)
-		std::cout << "Reception Rate 6/3: "
-				<< ((double) Unique_RX_Pkts6 / Unique_RX_Pkts3) * 100
-				<< std::endl;
-
-	os << "Now:  " << Simulator::Now().GetSeconds() << "Tx_Data_Pkts:   "
-			<< Tx_Data_Pkts << "Rx_Data_Pkts4:   " << Rx_Data_Pkts4
-			<< "Unique_RX_Pkts4: " << Unique_RX_Pkts4 << std::endl;
-
-	os << "Now:  " << Simulator::Now().GetSeconds() << "Tx_Data_Pkts1:   "
-			<< Tx_Data_Pkts1 << "Rx_Data_Pkts5:   " << Rx_Data_Pkts5
-			<< "Unique_RX_Pkts5: " << Unique_RX_Pkts5 << std::endl;
-
-	old_Unique_RX_Pkts4 = Unique_RX_Pkts4;
-	old_Rx_Data_Pkts4 = Rx_Data_Pkts4;
-	old_Unique_RX_Pkts = Unique_RX_Pkts;
-	old_Rx_Data_Pkts = Rx_Data_Pkts;
-	old_Tx_Data_Pkts = Tx_Data_Pkts;
-
-	old_Unique_RX_Pkts5 = Unique_RX_Pkts5;
-	old_Rx_Data_Pkts5 = Rx_Data_Pkts5;
-	old_Unique_RX_Pkts2 = Unique_RX_Pkts2;
-	old_Rx_Data_Pkts2 = Rx_Data_Pkts2;
-	old_Tx_Data_Pkts1 = Tx_Data_Pkts1;
+		if (statistics[i].Tx_Data_Pkts != 0)
+			std::cout << "Reception Rate "<< i << ":"
+					<< ((double) statistics[i].Unique_RX_Pkts / statistics[i].Tx_Data_Pkts ) * 100
+					<< std::endl;
+		statistics[i].old_Unique_RX_Pkts = statistics[i].Unique_RX_Pkts;
+		statistics[i].old_Rx_Data_Pkts = statistics[i].Rx_Data_Pkts;
+		statistics[i].old_Unique_RX_Pkts = statistics[i].Unique_RX_Pkts;
+		statistics[i].old_Rx_Data_Pkts = statistics[i].Rx_Data_Pkts;
+		statistics[i].old_Tx_Data_Pkts = statistics[i].Tx_Data_Pkts;
+	}
 
 	Simulator::Schedule(Seconds(1.0), &VanetSim::Look_at_clock, this);
 }
 
-void VanetSim::TXTrace(Ptr<const Packet> newpacket)
+void VanetSim::TXTraces(std::string context,Ptr<const Packet> newpacket)
 {
-	Tx_Data_Pkts++;
-	Tx_Data_Bytes += newpacket->GetSize();
+	//packetsize = 1000,means no useful information
+	int noofnode =0;
+	int pcontext=10;
+	while(context[pcontext]!='/')
+	{
+		noofnode = noofnode*10 + context[pcontext] -'0';
+		pcontext++;
+	}
+
+	int num = noofnode - (nodeNum+numofLC);
+	statistics[num].Tx_Data_Pkts++;
+	statistics[num].Tx_Data_Bytes += newpacket->GetSize();
 	//std::cout<<"ANOTHER ONE!HAHAHA"<<std::endl;
 
 	Time now = Simulator::Now();
-	delay[newpacket->GetUid()] = now;
+	statistics[num].delay[newpacket->GetUid()] = now;
 }
 
-void VanetSim::TXTrace1(Ptr<const Packet> newpacket)
-{
-	Tx_Data_Pkts1++;
-	Tx_Data_Bytes1 += newpacket->GetSize();
-	//std::cout<<"ANOTHER ONE!HAHAHA"<<std::endl;
-
-	Time now = Simulator::Now();
-	delay1[newpacket->GetUid()] = now;
-}
-
-void VanetSim::TXTrace2(Ptr<const Packet> newpacket)
-{
-	Tx_Data_Pkts2++;
-	Tx_Data_Bytes2 += newpacket->GetSize();
-	//std::cout<<"ANOTHER ONE!HAHAHA"<<std::endl;
-
-	Time now = Simulator::Now();
-	delay2[newpacket->GetUid()] = now;
-}
 // Example to use ns2 traces file in ns3
 int main(int argc, char *argv[])
 {

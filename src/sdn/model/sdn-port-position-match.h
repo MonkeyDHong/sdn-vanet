@@ -41,6 +41,18 @@ namespace sdn
 class Port_Position_Match
 {
 public:
+	uint32_t m_port1;
+	uint32_t m_port2;
+	uint32_t m_port3;
+	uint32_t m_port4;
+	uint32_t m_port5;
+	uint32_t m_port6;
+	uint32_t m_port7;
+	uint32_t m_port8;
+	uint32_t m_port9;
+	uint32_t m_port10;
+	uint32_t m_port11;
+	uint32_t m_port12;
 	Port_Position_Match();
 
 	bool CheckThis(uint16_t port, Vector position);
